@@ -7,6 +7,14 @@
 
 import UIKit
 
+extension String {
+  var fixedBase64Format: Self {
+    let offset = count % 4
+    guard offset != 0 else { return self }
+    return padding(toLength: count + 4 - offset, withPad: "=", startingAt: 0)
+  }
+}
+
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
@@ -30,12 +38,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         if let firstPointRange = url.range(of: "."),
            let secondPointRange = url.range(of: ".", range: firstPointRange.upperBound..<url.endIndex) {
-            let parsedString = String(url[firstPointRange.upperBound..<secondPointRange.lowerBound])
-            if let data = Data(base64Encoded: parsedString) {
-                let decodedString = String(data: data, encoding: .utf8)
-                let notificationName = Notification.Name(Constants.Notification.Name)
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: [Constants.Notification.IdToken: decodedString])
+            let parsedString = String(url[firstPointRange.upperBound..<secondPointRange.lowerBound]).fixedBase64Format
+            guard let data = Data(base64Encoded: parsedString) else {
+                print("Cannot decode content")
+                return
             }
+            let decodedString = String(data: data, encoding: .utf8)
+            let notificationName = Notification.Name(Constants.Notification.Name)
+            NotificationCenter.default.post(name: notificationName, object: nil, userInfo: [Constants.Notification.IdToken: decodedString])
+            
         }
     }
 
